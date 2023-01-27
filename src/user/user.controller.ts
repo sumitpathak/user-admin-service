@@ -17,15 +17,24 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  /**
+   * 
+   * @param createUserDto {
+"teacher": "teacherken@gmail.com" 
+"students":
+[ "studentjon@gmail.com", "studenthon@gmail.com"
+] }
+   * @returns 
+   */
   @Post('register')
   @Header('Content-Type', 'application/json')
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @HttpCode(204)
+  register(@Body() registerUser: { teacher: string; students: string[] }) {
+    return this.userService.register(registerUser);
   }
 
-  @Get()
-  @HttpCode(204)
-  findAll() {
+  @Get('users')
+  async findAll(): Promise<any> {
     return this.userService.findAll();
   }
 
