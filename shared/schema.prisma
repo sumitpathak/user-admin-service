@@ -36,4 +36,5 @@ model User {
 
   @@index([studentId])
   @@index([teacherId])
+  @@map("user")
 }

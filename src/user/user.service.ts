@@ -47,7 +47,7 @@ export class UserService {
     console.log(JSON.stringify(data));
     const result = data.map((teacher) => {
       return {
-        ...teacher,
+        //...teacher,
         students: teacher.students.map((student) => student.Student.email),
       };
     });
@@ -55,15 +55,59 @@ export class UserService {
     //return `This action returns all user`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(teacher: string[]) {
+    const teacherList = [];
+    if (Array.isArray(teacher)) {
+      console.log('------------------');
+      for (let i = 0; i < teacher.length; i++) {
+        teacherList.push({
+          email: {
+            equals: teacher[i],
+          },
+        });
+      }
+    } else {
+      teacherList.push({
+        email: {
+          equals: teacher,
+        },
+      });
+    }
+    const data = await this.prisma.student.findMany({
+      where: {
+        teachers: {
+          every: {
+            Teacher: {
+              OR: teacherList,
+            },
+          },
+        },
+      },
+      distinct: ['email'],
+      select: {
+        email: true,
+      },
+    });
+    console.log(data);
+    //return `This action returns a #${id} user`;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async suspendUser(updateUserStatus: { student: string }) {
+    const getUser = await this.prisma.student.findMany({
+      where: {
+        email: updateUserStatus.student,
+      },
+    });
+    console.log(getUser);
+
+    // await this.prisma.student.update({
+    //   where: {},
+    //   data: undefined,
+    // });
+    //return `This action updates a #${id} user`;
   }
 
   remove(id: number) {
-    return `This action removes a #${id} user`;
+    return `This action removes a #${id} user `;
   }
 }

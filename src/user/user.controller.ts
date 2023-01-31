@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   Header,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -38,14 +39,16 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Get('commonstudents')
+  findOne(@Query('teacher') teacher: string[]) {
+    return this.userService.findOne(teacher);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  @Patch('suspend')
+  @Header('Content-Type', 'application/json')
+  @HttpCode(204)
+  suspendUser(@Body() updateUserStatus: { student: string }) {
+    return this.userService.suspendUser(updateUserStatus);
   }
 
   @Delete(':id')
