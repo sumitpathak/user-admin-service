@@ -1,0 +1,40 @@
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String
+  students  User[]
+}
+
+model Student {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String
+  suspend   Boolean  @default(false)
+  teachers  User[]
+}
+
+model User {
+  id String @id @default(uuid())
+
+  Teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  teacherId String?
+  Student   Student? @relation(fields: [studentId], references: [id])
+  studentId String?
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@map("user")
+}
