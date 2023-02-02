@@ -1,9 +1,11 @@
 import { Injectable, Scope } from '@nestjs/common';
+import { matches } from 'class-validator';
 import { PrismaService } from 'shared/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-@Injectable({ scope: Scope.REQUEST })
+//@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
@@ -44,7 +46,7 @@ export class UserService {
         },
       },
     });
-    console.log(JSON.stringify(data));
+    //console.log(JSON.stringify(data));
     const result = data.map((teacher) => {
       return {
         //...teacher,
@@ -60,17 +62,14 @@ export class UserService {
     if (Array.isArray(teacher)) {
       console.log('------------------');
       for (let i = 0; i < teacher.length; i++) {
+        //console.log(teacher[i]);
         teacherList.push({
-          email: {
-            equals: teacher[i],
-          },
+          email: teacher[i],
         });
       }
     } else {
       teacherList.push({
-        email: {
-          equals: teacher,
-        },
+        email: teacher,
       });
     }
     const data = await this.prisma.student.findMany({
@@ -78,7 +77,7 @@ export class UserService {
         teachers: {
           every: {
             Teacher: {
-              OR: teacherList,
+              AND: teacherList,
             },
           },
         },
@@ -86,6 +85,7 @@ export class UserService {
       distinct: ['email'],
       select: {
         email: true,
+        //suspend: true,
       },
     });
     console.log(data);
@@ -97,17 +97,75 @@ export class UserService {
       where: {
         email: updateUserStatus.student,
       },
+      //distinct: ['email'],
     });
     console.log(getUser);
 
-    // await this.prisma.student.update({
-    //   where: {},
-    //   data: undefined,
-    // });
+    await this.prisma.student.update({
+      where: {
+        id: getUser[0].id,
+      },
+      data: {
+        suspend: !getUser[0].suspend ? true : getUser[0].suspend,
+      },
+    });
     //return `This action updates a #${id} user`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user `;
+  async retrieveNotifications(notiyfyUser: {
+    teacher: string;
+    notification: string;
+  }) {
+    //console.log(notiyfyUser);
+    const studentMails = this.emailExtractor(notiyfyUser.notification);
+    const registerWith = [];
+    studentMails.map(async (studentEmail) => {
+      const registered = await this.prisma.student.findMany({
+        where: {
+          email: studentEmail,
+          suspend: false,
+        },
+        distinct: ['email'],
+        select: {
+          email: true,
+        },
+      });
+      if (registered.length > 0 && registered[0].email) {
+        registerWith.push(registered[0].email);
+      }
+    });
+
+    const registeredWithTeacher = await this.prisma.student.findMany({
+      where: {
+        teachers: {
+          every: {
+            Teacher: {
+              email: notiyfyUser.teacher,
+            },
+          },
+        },
+        suspend: false,
+      },
+      distinct: ['email'],
+      select: {
+        email: true,
+      },
+    });
+
+    console.log('registerWith', registerWith);
+    registeredWithTeacher.map((student) => {
+      registerWith.push(student.email);
+    });
+
+    console.log('registerWith', registerWith);
+    return `This action removes a #${notiyfyUser} user `;
+  }
+
+  emailExtractor(str: string) {
+    const emaillst = str.match(
+      /([a-zA-Z0-9._+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi,
+    );
+    const uniqueMail = Array.from(new Set(emaillst));
+    return emaillst !== null ? uniqueMail : null;
   }
 }

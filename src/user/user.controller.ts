@@ -51,8 +51,12 @@ export class UserController {
     return this.userService.suspendUser(updateUserStatus);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Post('retrievefornotifications')
+  @Header('Content-Type', 'application/json')
+  @HttpCode(204)
+  retrieveNotifications(
+    @Body() notiyfyUser: { teacher: string; notification: string },
+  ) {
+    return this.userService.retrieveNotifications(notiyfyUser);
   }
 }
