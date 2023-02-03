@@ -1,17 +1,25 @@
 import { Injectable, Scope } from '@nestjs/common';
 import { matches } from 'class-validator';
-import { PrismaService } from 'shared/prisma.service';
+import { PrismaService } from 'shared/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  CommonStudentsResponse,
+  GetUserResponse,
+  RegisterResponse,
+} from './user.model';
 
 //@Injectable({ scope: Scope.REQUEST })
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async register(registerUser: { teacher: string; students: string[] }) {
+  async register(
+    teacher: string,
+    students: string[],
+  ): Promise<RegisterResponse> {
     const userData = [];
-    registerUser.students.map((student) => {
+    students.map((student) => {
       const data = {
         Student: {
           create: {
@@ -25,7 +33,7 @@ export class UserService {
     });
     const data = await this.prisma.teacher.create({
       data: {
-        email: registerUser.teacher,
+        email: teacher,
         updatedAt: new Date(),
         students: {
           create: userData,
@@ -36,7 +44,7 @@ export class UserService {
     return 'This action adds a new user';
   }
 
-  async findAll() {
+  async findAll(): Promise<any> {
     const data = await this.prisma.teacher.findMany({
       include: {
         students: {
@@ -46,23 +54,19 @@ export class UserService {
         },
       },
     });
-    //console.log(JSON.stringify(data));
     const result = data.map((teacher) => {
       return {
-        //...teacher,
+        ...teacher,
         students: teacher.students.map((student) => student.Student.email),
       };
     });
-    console.log(result);
-    //return `This action returns all user`;
+    return { data: result };
   }
 
-  async findOne(teacher: string[]) {
+  async findOne(teacher: string[]): Promise<CommonStudentsResponse> {
     const teacherList = [];
     if (Array.isArray(teacher)) {
-      console.log('------------------');
       for (let i = 0; i < teacher.length; i++) {
-        //console.log(teacher[i]);
         teacherList.push({
           email: teacher[i],
         });
@@ -85,10 +89,14 @@ export class UserService {
       distinct: ['email'],
       select: {
         email: true,
-        //suspend: true,
       },
     });
-    console.log(data);
+    const studentList = [];
+    data.map((studentMail) => {
+      studentList.push(studentMail.email);
+    });
+    //console.log(data.length);
+    return { students: studentList };
     //return `This action returns a #${id} user`;
   }
 

@@ -13,6 +13,13 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  CommonStudentsResponse,
+  GetUserResponse,
+  RegisterRequest,
+  RegisterResponse,
+} from './user.model';
+import { createApiResponse } from 'shared/src/create-responses/api_response';
 
 @Controller()
 export class UserController {
@@ -30,18 +37,28 @@ export class UserController {
   @Post('register')
   @Header('Content-Type', 'application/json')
   @HttpCode(204)
-  register(@Body() registerUser: { teacher: string; students: string[] }) {
-    return this.userService.register(registerUser);
+  register(
+    @Body() { teacher, students }: RegisterRequest,
+  ): Promise<RegisterResponse> {
+    return createApiResponse(this.userService, this.userService.register, [
+      teacher,
+      students,
+    ]);
   }
 
   @Get('users')
-  async findAll(): Promise<any> {
-    return this.userService.findAll();
+  async findAll(): Promise<GetUserResponse> {
+    return createApiResponse(this.userService, this.userService.findAll);
   }
 
   @Get('commonstudents')
-  findOne(@Query('teacher') teacher: string[]) {
-    return this.userService.findOne(teacher);
+  findOne(
+    @Query('teacher') teacher: string[],
+  ): Promise<CommonStudentsResponse> {
+    //return this.userService.findOne(teacher);
+    return createApiResponse(this.userService, this.userService.findOne, [
+      teacher,
+    ]);
   }
 
   @Patch('suspend')
