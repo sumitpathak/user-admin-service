@@ -7,6 +7,7 @@ import {
   CommonStudentsResponse,
   GetUserResponse,
   RegisterResponse,
+  RetrieveForNotificationsResponse,
 } from './user.model';
 
 //@Injectable({ scope: Scope.REQUEST })
@@ -100,10 +101,10 @@ export class UserService {
     //return `This action returns a #${id} user`;
   }
 
-  async suspendUser(updateUserStatus: { student: string }) {
+  async suspendUser(student: string): Promise<any> {
     const getUser = await this.prisma.student.findMany({
       where: {
-        email: updateUserStatus.student,
+        email: student,
       },
       //distinct: ['email'],
     });
@@ -120,12 +121,12 @@ export class UserService {
     //return `This action updates a #${id} user`;
   }
 
-  async retrieveNotifications(notiyfyUser: {
-    teacher: string;
-    notification: string;
-  }) {
-    //console.log(notiyfyUser);
-    const studentMails = this.emailExtractor(notiyfyUser.notification);
+  async retrieveNotifications(
+    teacher: string,
+    notification: string,
+  ): Promise<any> {
+    console.log(teacher);
+    const studentMails = this.emailExtractor(notification);
     const registerWith = [];
     studentMails.map(async (studentEmail) => {
       const registered = await this.prisma.student.findMany({
@@ -148,7 +149,7 @@ export class UserService {
         teachers: {
           every: {
             Teacher: {
-              email: notiyfyUser.teacher,
+              email: teacher,
             },
           },
         },
@@ -166,7 +167,8 @@ export class UserService {
     });
 
     console.log('registerWith', registerWith);
-    return `This action removes a #${notiyfyUser} user `;
+    //return `This action removes a #${notiyfyUser} user `;
+    return registerWith;
   }
 
   emailExtractor(str: string) {

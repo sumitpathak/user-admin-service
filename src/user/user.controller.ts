@@ -18,6 +18,10 @@ import {
   GetUserResponse,
   RegisterRequest,
   RegisterResponse,
+  RetrieveForNotificationsRequest,
+  RetrieveForNotificationsResponse,
+  StudentSuspendResponse,
+  StudentSuspendRrequest,
 } from './user.model';
 import { createApiResponse } from 'shared/src/create-responses/api_response';
 
@@ -55,7 +59,6 @@ export class UserController {
   findOne(
     @Query('teacher') teacher: string[],
   ): Promise<CommonStudentsResponse> {
-    //return this.userService.findOne(teacher);
     return createApiResponse(this.userService, this.userService.findOne, [
       teacher,
     ]);
@@ -64,16 +67,25 @@ export class UserController {
   @Patch('suspend')
   @Header('Content-Type', 'application/json')
   @HttpCode(204)
-  suspendUser(@Body() updateUserStatus: { student: string }) {
-    return this.userService.suspendUser(updateUserStatus);
+  suspendUser(
+    @Body() { student }: StudentSuspendRrequest,
+  ): Promise<StudentSuspendResponse> {
+    return createApiResponse(this.userService, this.userService.suspendUser, [
+      student,
+    ]);
   }
 
   @Post('retrievefornotifications')
   @Header('Content-Type', 'application/json')
   @HttpCode(204)
   retrieveNotifications(
-    @Body() notiyfyUser: { teacher: string; notification: string },
-  ) {
-    return this.userService.retrieveNotifications(notiyfyUser);
+    @Body() { teacher, notification }: RetrieveForNotificationsRequest,
+  ): Promise<any> {
+    console.log(notification);
+    return createApiResponse(
+      this.userService,
+      this.userService.retrieveNotifications,
+      [teacher, notification],
+    );
   }
 }
