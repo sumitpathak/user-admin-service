@@ -36,10 +36,20 @@ $ yarn run test:cov
 
 ## Support
 
+## Prisma 
+```
+$ npm install -g 
+$ prisma npx prisma -h 
+$ npx prisma migrate dev
+```
+## Docker
+```
+$ docker-compose up -d
+```
 
 
 ## Stay in touch
 
-- Author - [Sumit Pathak](https://kamilmysliwiec.com)
+- Author - [Sumit Pathak]
 
 ## License

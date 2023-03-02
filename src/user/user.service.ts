@@ -1,15 +1,26 @@
 import { Injectable, Scope } from '@nestjs/common';
-import { PrismaService } from 'shared/prisma.service';
+import { matches } from 'class-validator';
+import { PrismaService } from 'shared/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  CommonStudentsResponse,
+  GetUserResponse,
+  RegisterResponse,
+  RetrieveForNotificationsResponse,
+} from './user.model';
 
-@Injectable({ scope: Scope.REQUEST })
+//@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async register(registerUser: { teacher: string; students: string[] }) {
+  async register(
+    teacher: string,
+    students: string[],
+  ): Promise<RegisterResponse> {
     const userData = [];
-    registerUser.students.map((student) => {
+    students.map((student) => {
       const data = {
         Student: {
           create: {
@@ -23,7 +34,7 @@ export class UserService {
     });
     const data = await this.prisma.teacher.create({
       data: {
-        email: registerUser.teacher,
+        email: teacher,
         updatedAt: new Date(),
         students: {
           create: userData,
@@ -34,7 +45,7 @@ export class UserService {
     return 'This action adds a new user';
   }
 
-  async findAll() {
+  async findAll(): Promise<any> {
     const data = await this.prisma.teacher.findMany({
       include: {
         students: {
@@ -44,33 +55,26 @@ export class UserService {
         },
       },
     });
-    console.log(JSON.stringify(data));
     const result = data.map((teacher) => {
       return {
-        //...teacher,
+        ...teacher,
         students: teacher.students.map((student) => student.Student.email),
       };
     });
-    console.log(result);
-    //return `This action returns all user`;
+    return { data: result };
   }
 
-  async findOne(teacher: string[]) {
+  async findOne(teacher: string[]): Promise<CommonStudentsResponse> {
     const teacherList = [];
     if (Array.isArray(teacher)) {
-      console.log('------------------');
       for (let i = 0; i < teacher.length; i++) {
         teacherList.push({
-          email: {
-            equals: teacher[i],
-          },
+          email: teacher[i],
         });
       }
     } else {
       teacherList.push({
-        email: {
-          equals: teacher,
-        },
+        email: teacher,
       });
     }
     const data = await this.prisma.student.findMany({
@@ -78,7 +82,7 @@ export class UserService {
         teachers: {
           every: {
             Teacher: {
-              OR: teacherList,
+              AND: teacherList,
             },
           },
         },
@@ -88,26 +92,90 @@ export class UserService {
         email: true,
       },
     });
-    console.log(data);
+    const studentList = [];
+    data.map((studentMail) => {
+      studentList.push(studentMail.email);
+    });
+    //console.log(data.length);
+    return { students: studentList };
     //return `This action returns a #${id} user`;
   }
 
-  async suspendUser(updateUserStatus: { student: string }) {
+  async suspendUser(student: string): Promise<any> {
     const getUser = await this.prisma.student.findMany({
       where: {
-        email: updateUserStatus.student,
+        email: student,
       },
+      //distinct: ['email'],
     });
     console.log(getUser);
 
-    // await this.prisma.student.update({
-    //   where: {},
-    //   data: undefined,
-    // });
+    await this.prisma.student.update({
+      where: {
+        id: getUser[0].id,
+      },
+      data: {
+        suspend: !getUser[0].suspend ? true : getUser[0].suspend,
+      },
+    });
     //return `This action updates a #${id} user`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user `;
+  async retrieveNotifications(
+    teacher: string,
+    notification: string,
+  ): Promise<any> {
+    console.log(teacher);
+    const studentMails = this.emailExtractor(notification);
+    const registerWith = [];
+    studentMails.map(async (studentEmail) => {
+      const registered = await this.prisma.student.findMany({
+        where: {
+          email: studentEmail,
+          suspend: false,
+        },
+        distinct: ['email'],
+        select: {
+          email: true,
+        },
+      });
+      if (registered.length > 0 && registered[0].email) {
+        registerWith.push(registered[0].email);
+      }
+    });
+
+    const registeredWithTeacher = await this.prisma.student.findMany({
+      where: {
+        teachers: {
+          every: {
+            Teacher: {
+              email: teacher,
+            },
+          },
+        },
+        suspend: false,
+      },
+      distinct: ['email'],
+      select: {
+        email: true,
+      },
+    });
+
+    console.log('registerWith', registerWith);
+    registeredWithTeacher.map((student) => {
+      registerWith.push(student.email);
+    });
+
+    console.log('registerWith', registerWith);
+    //return `This action removes a #${notiyfyUser} user `;
+    return registerWith;
+  }
+
+  emailExtractor(str: string) {
+    const emaillst = str.match(
+      /([a-zA-Z0-9._+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi,
+    );
+    const uniqueMail = Array.from(new Set(emaillst));
+    return emaillst !== null ? uniqueMail : null;
   }
 }

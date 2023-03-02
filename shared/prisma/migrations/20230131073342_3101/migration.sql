@@ -20,16 +20,16 @@ CREATE TABLE "Student" (
 );
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE "user" (
     "id" TEXT NOT NULL,
     "teacherId" TEXT,
     "studentId" TEXT,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "User_studentId_idx" ON "User"("studentId");
+CREATE INDEX "user_studentId_idx" ON "user"("studentId");
 
 -- CreateIndex
-CREATE INDEX "User_teacherId_idx" ON "User"("teacherId");
+CREATE INDEX "user_teacherId_idx" ON "user"("teacherId");

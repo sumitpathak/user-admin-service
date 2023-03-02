@@ -13,6 +13,17 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  CommonStudentsResponse,
+  GetUserResponse,
+  RegisterRequest,
+  RegisterResponse,
+  RetrieveForNotificationsRequest,
+  RetrieveForNotificationsResponse,
+  StudentSuspendResponse,
+  StudentSuspendRrequest,
+} from './user.model';
+import { createApiResponse } from 'shared/src/create-responses/api_response';
 
 @Controller()
 export class UserController {
@@ -30,29 +41,51 @@ export class UserController {
   @Post('register')
   @Header('Content-Type', 'application/json')
   @HttpCode(204)
-  register(@Body() registerUser: { teacher: string; students: string[] }) {
-    return this.userService.register(registerUser);
+  register(
+    @Body() { teacher, students }: RegisterRequest,
+  ): Promise<RegisterResponse> {
+    return createApiResponse(this.userService, this.userService.register, [
+      teacher,
+      students,
+    ]);
   }
 
   @Get('users')
-  async findAll(): Promise<any> {
-    return this.userService.findAll();
+  async findAll(): Promise<GetUserResponse> {
+    return createApiResponse(this.userService, this.userService.findAll);
   }
 
   @Get('commonstudents')
-  findOne(@Query('teacher') teacher: string[]) {
-    return this.userService.findOne(teacher);
+  findOne(
+    @Query('teacher') teacher: string[],
+  ): Promise<CommonStudentsResponse> {
+    return createApiResponse(this.userService, this.userService.findOne, [
+      teacher,
+    ]);
   }
 
   @Patch('suspend')
   @Header('Content-Type', 'application/json')
   @HttpCode(204)
-  suspendUser(@Body() updateUserStatus: { student: string }) {
-    return this.userService.suspendUser(updateUserStatus);
+  suspendUser(
+    @Body() { student }: StudentSuspendRrequest,
+  ): Promise<StudentSuspendResponse> {
+    return createApiResponse(this.userService, this.userService.suspendUser, [
+      student,
+    ]);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Post('retrievefornotifications')
+  @Header('Content-Type', 'application/json')
+  @HttpCode(204)
+  retrieveNotifications(
+    @Body() { teacher, notification }: RetrieveForNotificationsRequest,
+  ): Promise<any> {
+    console.log(notification);
+    return createApiResponse(
+      this.userService,
+      this.userService.retrieveNotifications,
+      [teacher, notification],
+    );
   }
 }
